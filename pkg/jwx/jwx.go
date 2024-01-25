@@ -129,7 +129,7 @@ func DecodeAccessTokenRSACustomClaims(accessToken string, e, n *string, customCl
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return rsaPublicKey, nil
-	})
+	}, jwt.WithoutClaimsValidation())
 
 	if err != nil {
 		return nil, errors.Wrap(err, errMessage)
