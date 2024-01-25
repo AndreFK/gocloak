@@ -437,7 +437,7 @@ func (g *GoCloak) decodeAccessTokenWithClaims(ctx context.Context, accessToken, 
 	if strings.HasPrefix(decodedHeader.Alg, "ES") {
 		return jwx.DecodeAccessTokenECDSACustomClaims(accessToken, usedKey.X, usedKey.Y, usedKey.Crv, claims)
 	} else if strings.HasPrefix(decodedHeader.Alg, "RS") {
-		return jwx.DecodeAccessTokenRSACustomClaims(accessToken, usedKey.E, usedKey.N, claims)
+		return jwx.DecodeAccessTokenRSACustomClaims(accessToken, usedKey.E, usedKey.N, claims, true)
 	}
 	return nil, fmt.Errorf("unsupported algorithm")
 }
@@ -446,6 +446,44 @@ func (g *GoCloak) decodeAccessTokenWithClaims(ctx context.Context, accessToken, 
 func (g *GoCloak) DecodeAccessToken(ctx context.Context, accessToken, realm string) (*jwt.Token, *jwt.MapClaims, error) {
 	claims := jwt.MapClaims{}
 	token, err := g.decodeAccessTokenWithClaims(ctx, accessToken, realm, claims)
+	if err != nil {
+		return nil, nil, err
+	}
+	return token, &claims, nil
+}
+
+func (g *GoCloak) decodeAccessTokenWithoutClaims(ctx context.Context, accessToken, realm string, claims jwt.Claims) (*jwt.Token, error) {
+	const errMessage = "could not decode access token"
+	accessToken = strings.Replace(accessToken, "Bearer ", "", 1)
+
+	decodedHeader, err := jwx.DecodeAccessTokenHeader(accessToken)
+	if err != nil {
+		return nil, errors.Wrap(err, errMessage)
+	}
+
+	certResult, err := g.GetCerts(ctx, realm)
+	if err != nil {
+		return nil, errors.Wrap(err, errMessage)
+	}
+	if certResult.Keys == nil {
+		return nil, errors.Wrap(errors.New("there is no keys to decode the token"), errMessage)
+	}
+	usedKey := findUsedKey(decodedHeader.Kid, *certResult.Keys)
+	if usedKey == nil {
+		return nil, errors.Wrap(errors.New("cannot find a key to decode the token"), errMessage)
+	}
+
+	if strings.HasPrefix(decodedHeader.Alg, "ES") {
+		return jwx.DecodeAccessTokenECDSACustomClaims(accessToken, usedKey.X, usedKey.Y, usedKey.Crv, claims)
+	} else if strings.HasPrefix(decodedHeader.Alg, "RS") {
+		return jwx.DecodeAccessTokenRSACustomClaims(accessToken, usedKey.E, usedKey.N, claims, false)
+	}
+	return nil, fmt.Errorf("unsupported algorithm")
+}
+
+func (g *GoCloak) DecodeAccessTokenWithoutClaims(ctx context.Context, accessToken, realm string) (*jwt.Token, *jwt.MapClaims, error) {
+	claims := jwt.MapClaims{}
+	token, err := g.decodeAccessTokenWithoutClaims(ctx, accessToken, realm, claims)
 	if err != nil {
 		return nil, nil, err
 	}
