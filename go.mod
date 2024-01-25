@@ -1,4 +1,4 @@
-module github.com/Nerzal/gocloak/v13
+module github.com/AndreFK/gocloak 
 
 go 1.18
 
@@ -19,4 +19,3 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/Nerzal/gocloak/v13 => github.com/AndreFK/gocloak v1.0.0
