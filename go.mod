@@ -1,4 +1,4 @@
-module github.com/AndreFK/gocloak 
+module github.com/AndreFK/gocloak
 
 go 1.18
 
@@ -18,4 +18,3 @@ require (
 	golang.org/x/net v0.17.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
